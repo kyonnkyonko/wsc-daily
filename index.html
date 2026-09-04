@@ -136,20 +136,6 @@
     background:var(--card-bg);color:var(--fg);font-size:14px;
   }
   .weekday-bar button.active{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);}
-  .nav-arrows{position:relative;}
-  .arrow-btn{
-    position:fixed;top:50%;transform:translateY(-50%);
-    background:var(--card-bg);border:1px solid var(--border);color:var(--muted);
-    width:34px;height:34px;border-radius:50%;font-size:18px;line-height:1;
-    display:flex;align-items:center;justify-content:center;opacity:.75;box-shadow:var(--shadow);
-    z-index:9;
-  }
-  .arrow-left{left:6px;}
-  .arrow-right{right:6px;}
-  @media (min-width:660px){
-    .arrow-left{left:calc(50% - 320px - 44px);}
-    .arrow-right{right:calc(50% - 320px - 44px);}
-  }
 
   /* ---- Menu / Category / About views ---- */
   .list-view{flex:1;overflow-y:auto;padding:6px 14px 30px;}
@@ -183,6 +169,24 @@
   .about-body h4{font-size:15.5px;margin:18px 0 8px;color:var(--accent);}
   .about-body p{margin:0 0 14px;}
   .about-body p.subtitle{color:var(--muted);font-style:italic;}
+  .onboarding-entry{width:100%;text-align:left;font-family:inherit;cursor:pointer;}
+
+  /* ---- Onboarding overlay ---- */
+  .onboarding-overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,.5);
+    display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;
+  }
+  .onboarding-card{
+    background:var(--card-bg);border:1px solid var(--border);border-radius:14px;
+    padding:22px 20px;max-width:340px;width:100%;box-shadow:var(--shadow);
+  }
+  .onboarding-card h2{font-size:18px;margin:0 0 14px;}
+  .onboarding-card ul{margin:0 0 18px;padding-left:20px;}
+  .onboarding-card li{margin-bottom:10px;line-height:1.6;font-size:14.5px;}
+  .onboarding-card button{
+    width:100%;padding:11px 0;border-radius:8px;border:none;
+    background:var(--accent);color:var(--accent-fg);font-size:15px;font-family:inherit;cursor:pointer;
+  }
 </style>
 
 <div class="container" id="app">
@@ -191,10 +195,6 @@
       <a class="btn-link" href="#menu">☰ 選單</a>
       <span class="title" id="daily-progress"></span>
       <a class="btn-link" href="#about">關於本書</a>
-    </div>
-    <div class="nav-arrows">
-      <button class="arrow-btn arrow-left" id="btn-prev" aria-label="前一天">‹</button>
-      <button class="arrow-btn arrow-right" id="btn-next" aria-label="後一天">›</button>
     </div>
     <div class="swipe-area" id="swipe-area">
       <div class="card" id="daily-card"></div>
@@ -226,7 +226,21 @@
       <span class="title">關於本書</span>
       <a class="btn-link" href="#menu">選單</a>
     </div>
-    <div class="list-view about-body" id="about-body"></div>
+    <div class="list-view about-body">
+      <button class="menu-item onboarding-entry" id="btn-show-onboarding">操作說明</button>
+      <div id="about-body"></div>
+    </div>
+  </div>
+</div>
+
+<div class="onboarding-overlay" id="onboarding-overlay" hidden>
+  <div class="onboarding-card">
+    <h2>操作說明</h2>
+    <ul>
+      <li><strong>左右滑動</strong>：切換禮拜一~六的內容，滑到底會自動接到下一問</li>
+      <li><strong>點選單</strong>：從分類清單直接跳到想看的問題</li>
+    </ul>
+    <button id="btn-onboarding-dismiss">知道了，不再顯示</button>
   </div>
 </div>
 
@@ -412,8 +426,6 @@
     render();
   }
 
-  document.getElementById('btn-prev').addEventListener('click', function(){ stepUnit(-1); });
-  document.getElementById('btn-next').addEventListener('click', function(){ stepUnit(1); });
   document.addEventListener('keydown', function(e){
     if (state.view !== 'daily') return;
     if (e.key === 'ArrowLeft') stepUnit(-1);
@@ -529,6 +541,19 @@
     e.preventDefault();
     history.back();
   });
+
+  var ONBOARDING_KEY = 'catechism_onboarding_seen_v1';
+  var onboardingOverlay = document.getElementById('onboarding-overlay');
+  function showOnboarding(){ onboardingOverlay.hidden = false; }
+  function dismissOnboarding(){
+    onboardingOverlay.hidden = true;
+    try { localStorage.setItem(ONBOARDING_KEY, '1'); } catch(e){}
+  }
+  document.getElementById('btn-onboarding-dismiss').addEventListener('click', dismissOnboarding);
+  document.getElementById('btn-show-onboarding').addEventListener('click', showOnboarding);
+  var onboardingSeen = false;
+  try { onboardingSeen = !!localStorage.getItem(ONBOARDING_KEY); } catch(e){}
+  if (!onboardingSeen) showOnboarding();
 
   window.addEventListener('hashchange', render);
   document.addEventListener('DOMContentLoaded', render);
