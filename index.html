@@ -346,8 +346,22 @@
 
   var state = {view:'daily', num:1, day:1};
 
+  // 開啟 App 時，網址可能帶著舊的 #qX/dY（例如在某一天「加入主畫面」、書籤、瀏覽紀錄），
+  // 會蓋掉 localStorage 裡的進度。所以只在頁面初次載入時：若目標是每日畫面且有存過進度，
+  // 一律回到上次讀到的地方，並把網址同步成該位置。App 內的跳轉（hashchange）不受影響。
+  var isInitialRender = true;
+
   function render(){
     state = parseHash();
+    if (isInitialRender){
+      isInitialRender = false;
+      var last = loadLastPosition();
+      if (state.view === 'daily' && last){
+        var t = resolveDailyTarget(last.num, last.day);
+        state = {view:'daily', num:t.num, day:t.day};
+        history.replaceState(null, '', '#q' + t.num + '/d' + t.day);
+      }
+    }
     if (state.view === 'daily'){
       showView('daily');
       renderDaily(state.num, state.day);
